@@ -1,0 +1,20 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: jcss1462org
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: holamundo
+service: crud-serverless-user
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+
+plugins:
+  - serverless-offline 
+
+functions:
+  get-users:
+    handler: handler.hello
+    events:
+      - http:
+          path: users
+          method: GET

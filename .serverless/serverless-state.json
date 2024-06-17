@@ -107,6 +107,12 @@
               "LogGroupName": "/aws/lambda/crud-serverless-user-dev-get-users"
             }
           },
+          "CreateDashusersLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/crud-serverless-user-dev-create-users"
+            }
+          },
           "IamRoleLambdaExecution": {
             "Type": "AWS::IAM::Role",
             "Properties": {
@@ -225,6 +231,12 @@
                               "GetDashusersLogGroup",
                               "Arn"
                             ]
+                          },
+                          {
+                            "Fn::GetAtt": [
+                              "CreateDashusersLogGroup",
+                              "Arn"
+                            ]
                           }
                         ]
                       }
@@ -241,7 +253,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/crud-serverless-user/dev/1718598505817-2024-06-17T04:28:25.817Z/crud-serverless-user.zip"
+                "S3Key": "serverless/crud-serverless-user/dev/1718650200844-2024-06-17T18:50:00.844Z/get-users.zip"
               },
               "Handler": "s_get_users.handler",
               "Runtime": "nodejs14.x",
@@ -259,14 +271,49 @@
               "GetDashusersLogGroup"
             ]
           },
-          "GetDashusersLambdaVersion4ZoP0VQDqrpv8Hdzqp3NU85bIqeIy5MZz0dO0758": {
+          "CreateDashusersLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/crud-serverless-user/dev/1718650200844-2024-06-17T18:50:00.844Z/create-users.zip"
+              },
+              "Handler": "s_create_users.handler",
+              "Runtime": "nodejs14.x",
+              "FunctionName": "crud-serverless-user-dev-create-users",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "CreateDashusersLogGroup"
+            ]
+          },
+          "GetDashusersLambdaVersionyaEjWdTvI84VF37QnnVnwjk7AgyhngQgKW2p0jss1SA": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "GetDashusersLambdaFunction"
               },
-              "CodeSha256": "uDE+AyrMojDKY91UyZMFmVvTLYXFNWl8YBcx+StwCU0="
+              "CodeSha256": "ODtkKxbkNDxMb2oj23+lWFYxR0thyGgUXB5re7/+g4w="
+            }
+          },
+          "CreateDashusersLambdaVersion7FHwQlQStZeHODxnqLbuBY5p1QjJlxzPvzJcWSy5JY": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "CreateDashusersLambdaFunction"
+              },
+              "CodeSha256": "ODtkKxbkNDxMb2oj23+lWFYxR0thyGgUXB5re7/+g4w="
             }
           },
           "ApiGatewayRestApi": {
@@ -354,7 +401,53 @@
               "GetDashusersLambdaPermissionApiGateway"
             ]
           },
-          "ApiGatewayDeployment1718598495621": {
+          "ApiGatewayMethodUsersPost": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+              "HttpMethod": "POST",
+              "RequestParameters": {},
+              "ResourceId": {
+                "Ref": "ApiGatewayResourceUsers"
+              },
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "ApiKeyRequired": false,
+              "AuthorizationType": "NONE",
+              "Integration": {
+                "IntegrationHttpMethod": "POST",
+                "Type": "AWS_PROXY",
+                "Uri": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":apigateway:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":lambda:path/2015-03-31/functions/",
+                      {
+                        "Fn::GetAtt": [
+                          "CreateDashusersLambdaFunction",
+                          "Arn"
+                        ]
+                      },
+                      "/invocations"
+                    ]
+                  ]
+                }
+              },
+              "MethodResponses": []
+            },
+            "DependsOn": [
+              "CreateDashusersLambdaPermissionApiGateway"
+            ]
+          },
+          "ApiGatewayDeployment1718650188091": {
             "Type": "AWS::ApiGateway::Deployment",
             "Properties": {
               "RestApiId": {
@@ -363,7 +456,8 @@
               "StageName": "dev"
             },
             "DependsOn": [
-              "ApiGatewayMethodUsersIdVarGet"
+              "ApiGatewayMethodUsersIdVarGet",
+              "ApiGatewayMethodUsersPost"
             ]
           },
           "GetDashusersLambdaPermissionApiGateway": {
@@ -372,6 +466,43 @@
               "FunctionName": {
                 "Fn::GetAtt": [
                   "GetDashusersLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Action": "lambda:InvokeFunction",
+              "Principal": "apigateway.amazonaws.com",
+              "SourceArn": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":execute-api:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":",
+                    {
+                      "Ref": "ApiGatewayRestApi"
+                    },
+                    "/*/*"
+                  ]
+                ]
+              }
+            }
+          },
+          "CreateDashusersLambdaPermissionApiGateway": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "CreateDashusersLambdaFunction",
                   "Arn"
                 ]
               },
@@ -512,7 +643,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/crud-serverless-user/dev/1718598505817-2024-06-17T04:28:25.817Z/custom-resources.zip"
+                "S3Key": "serverless/crud-serverless-user/dev/1718650200844-2024-06-17T18:50:00.844Z/custom-resources.zip"
               },
               "FunctionName": "crud-serverless-user-dev-custom-resource-apigw-cw-role",
               "Handler": "api-gateway-cloud-watch-role/handler.handler",
@@ -576,10 +707,19 @@
           "GetDashusersLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "GetDashusersLambdaVersion4ZoP0VQDqrpv8Hdzqp3NU85bIqeIy5MZz0dO0758"
+              "Ref": "GetDashusersLambdaVersionyaEjWdTvI84VF37QnnVnwjk7AgyhngQgKW2p0jss1SA"
             },
             "Export": {
               "Name": "sls-crud-serverless-user-dev-GetDashusersLambdaFunctionQualifiedArn"
+            }
+          },
+          "CreateDashusersLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "CreateDashusersLambdaVersion7FHwQlQStZeHODxnqLbuBY5p1QjJlxzPvzJcWSy5JY"
+            },
+            "Export": {
+              "Name": "sls-crud-serverless-user-dev-CreateDashusersLambdaFunctionQualifiedArn"
             }
           },
           "ServiceEndpoint": {
@@ -729,12 +869,43 @@
           }
         ],
         "name": "crud-serverless-user-dev-get-users",
-        "package": {},
+        "package": {
+          "patterns": [
+            "s_get_users.js",
+            "serverless_sdk/**"
+          ],
+          "artifact": "C:\\Users\\Usuario\\Desktop\\Cursos\\AWS\\serverlessFramework\\miPrimerServerless\\.serverless\\get-users.zip"
+        },
         "memory": 1024,
         "timeout": 6,
         "runtime": "nodejs14.x",
         "vpc": {},
-        "versionLogicalId": "GetDashusersLambdaVersion4ZoP0VQDqrpv8Hdzqp3NU85bIqeIy5MZz0dO0758"
+        "versionLogicalId": "GetDashusersLambdaVersionyaEjWdTvI84VF37QnnVnwjk7AgyhngQgKW2p0jss1SA"
+      },
+      "create-users": {
+        "handler": "s_create_users.handler",
+        "events": [
+          {
+            "http": {
+              "path": "users",
+              "method": "post",
+              "integration": "AWS_PROXY"
+            }
+          }
+        ],
+        "name": "crud-serverless-user-dev-create-users",
+        "package": {
+          "patterns": [
+            "s_create_users.js",
+            "serverless_sdk/**"
+          ],
+          "artifact": "C:\\Users\\Usuario\\Desktop\\Cursos\\AWS\\serverlessFramework\\miPrimerServerless\\.serverless\\create-users.zip"
+        },
+        "memory": 1024,
+        "timeout": 6,
+        "runtime": "nodejs14.x",
+        "vpc": {},
+        "versionLogicalId": "CreateDashusersLambdaVersion7FHwQlQStZeHODxnqLbuBY5p1QjJlxzPvzJcWSy5JY"
       }
     },
     "resources": {
@@ -776,6 +947,15 @@
       "plugins": {
         "$ref": "$[\"service\"][\"plugins\"]"
       },
+      "package": {
+        "individually": true,
+        "patterns": [
+          "!.dynamodb",
+          "!.node_modules"
+        ],
+        "artifactsS3KeyDirname": "serverless/crud-serverless-user/dev/code-artifacts",
+        "artifactDirectoryName": "serverless/crud-serverless-user/dev/1718650200844-2024-06-17T18:50:00.844Z"
+      },
       "custom": {
         "$ref": "$[\"service\"][\"custom\"]"
       },
@@ -792,11 +972,11 @@
     "isDashboardMonitoringPreconfigured": true,
     "isDashboardAppPreconfigured": true,
     "orgUid": "a577ed36-6e09-4535-9305-7acb0e6403dd",
-    "appUid": "sDZtp3GFZZZv8SVTKh",
-    "artifact": "C:\\Users\\Usuario\\Desktop\\Cursos\\AWS\\serverlessFramework\\miPrimerServerless\\.serverless\\crud-serverless-user.zip"
+    "appUid": "sDZtp3GFZZZv8SVTKh"
   },
   "package": {
-    "artifactDirectoryName": "serverless/crud-serverless-user/dev/1718598505817-2024-06-17T04:28:25.817Z",
-    "artifact": "crud-serverless-user.zip"
+    "individually": true,
+    "artifactDirectoryName": "serverless/crud-serverless-user/dev/1718650200844-2024-06-17T18:50:00.844Z",
+    "artifact": ""
   }
 }

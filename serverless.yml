@@ -20,6 +20,11 @@ plugins:
   - serverless-dynamodb
 
 
+package:
+  individually: true
+  patterns:
+    - "!.dynamodb"
+    - "!.node_modules"
 	
 custom:
   dynamodb:
@@ -35,11 +40,18 @@ custom:
 
 functions:
   get-users:
-    handler: handler.getUsers
+    handler: getUsers/handler.getUsers
     events:
       - http:
           path: users/{id}
           method: GET
+
+  create-users:
+    handler: createUsers/handler.createUsers
+    events:
+      - http:
+          path: users
+          method: POST
 
 
 	

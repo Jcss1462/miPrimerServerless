@@ -14,6 +14,7 @@
     "serverless-offline": "^13.6.0"
   },
   "dependencies": {
+    "graceful-fs": "^4.2.11",
     "serverless-dynamodb": "^0.2.53"
   }
 }

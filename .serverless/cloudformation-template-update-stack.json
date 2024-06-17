@@ -71,10 +71,10 @@
         }
       }
     },
-    "HelloDashworldLogGroup": {
+    "GetDashusersLogGroup": {
       "Type": "AWS::Logs::LogGroup",
       "Properties": {
-        "LogGroupName": "/aws/lambda/hello-world-dev-hello-world"
+        "LogGroupName": "/aws/lambda/crud-serverless-user-dev-get-users"
       }
     },
     "IamRoleLambdaExecution": {
@@ -102,7 +102,7 @@
               "Fn::Join": [
                 "-",
                 [
-                  "hello-world",
+                  "crud-serverless-user",
                   "dev",
                   "lambda"
                 ]
@@ -120,7 +120,7 @@
                   ],
                   "Resource": [
                     {
-                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/hello-world-dev*:*"
+                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/crud-serverless-user-dev*:*"
                     }
                   ]
                 },
@@ -131,9 +131,21 @@
                   ],
                   "Resource": [
                     {
-                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/hello-world-dev*:*:*"
+                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/crud-serverless-user-dev*:*:*"
                     }
                   ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "dynamodb:*"
+                  ],
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "usersTable",
+                      "Arn"
+                    ]
+                  }
                 }
               ]
             }
@@ -144,7 +156,7 @@
           "Fn::Join": [
             "-",
             [
-              "hello-world",
+              "crud-serverless-user",
               "dev",
               {
                 "Ref": "AWS::Region"
@@ -155,18 +167,64 @@
         }
       }
     },
-    "HelloDashworldLambdaFunction": {
+    "EnterpriseLogAccessIamRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "arn:aws:iam::802587217904:root"
+              },
+              "Action": "sts:AssumeRole",
+              "Condition": {
+                "StringEquals": {
+                  "sts:ExternalId": "ServerlessEnterprise-a577ed36-6e09-4535-9305-7acb0e6403dd"
+                }
+              }
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "LogFilterAccess",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:FilterLogEvents"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::GetAtt": [
+                        "GetDashusersLogGroup",
+                        "Arn"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "GetDashusersLambdaFunction": {
       "Type": "AWS::Lambda::Function",
       "Properties": {
         "Code": {
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/hello-world/dev/1718405165230-2024-06-14T22:46:05.230Z/hello-world.zip"
+          "S3Key": "serverless/crud-serverless-user/dev/1718598505817-2024-06-17T04:28:25.817Z/crud-serverless-user.zip"
         },
-        "Handler": "handler.hello",
-        "Runtime": "nodejs20.x",
-        "FunctionName": "hello-world-dev-hello-world",
+        "Handler": "s_get_users.handler",
+        "Runtime": "nodejs14.x",
+        "FunctionName": "crud-serverless-user-dev-get-users",
         "MemorySize": 1024,
         "Timeout": 6,
         "Role": {
@@ -177,23 +235,23 @@
         }
       },
       "DependsOn": [
-        "HelloDashworldLogGroup"
+        "GetDashusersLogGroup"
       ]
     },
-    "HelloDashworldLambdaVersionLUmzXjWYDZQPuzaOAg2hDVfA3rQVFzoIbuS0Klaeg": {
+    "GetDashusersLambdaVersion4ZoP0VQDqrpv8Hdzqp3NU85bIqeIy5MZz0dO0758": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
-          "Ref": "HelloDashworldLambdaFunction"
+          "Ref": "GetDashusersLambdaFunction"
         },
-        "CodeSha256": "0Q/Z7ghihm/6EZO2GplSp2Jb/kHaJBuRI/6w50v25mE="
+        "CodeSha256": "uDE+AyrMojDKY91UyZMFmVvTLYXFNWl8YBcx+StwCU0="
       }
     },
     "ApiGatewayRestApi": {
       "Type": "AWS::ApiGateway::RestApi",
       "Properties": {
-        "Name": "dev-hello-world",
+        "Name": "dev-crud-serverless-user",
         "EndpointConfiguration": {
           "Types": [
             "EDGE"
@@ -202,7 +260,7 @@
         "Policy": ""
       }
     },
-    "ApiGatewayResourceHello": {
+    "ApiGatewayResourceUsers": {
       "Type": "AWS::ApiGateway::Resource",
       "Properties": {
         "ParentId": {
@@ -211,19 +269,31 @@
             "RootResourceId"
           ]
         },
-        "PathPart": "hello",
+        "PathPart": "users",
         "RestApiId": {
           "Ref": "ApiGatewayRestApi"
         }
       }
     },
-    "ApiGatewayMethodHelloGet": {
+    "ApiGatewayResourceUsersIdVar": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Ref": "ApiGatewayResourceUsers"
+        },
+        "PathPart": "{id}",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayMethodUsersIdVarGet": {
       "Type": "AWS::ApiGateway::Method",
       "Properties": {
         "HttpMethod": "GET",
         "RequestParameters": {},
         "ResourceId": {
-          "Ref": "ApiGatewayResourceHello"
+          "Ref": "ApiGatewayResourceUsersIdVar"
         },
         "RestApiId": {
           "Ref": "ApiGatewayRestApi"
@@ -248,7 +318,7 @@
                 ":lambda:path/2015-03-31/functions/",
                 {
                   "Fn::GetAtt": [
-                    "HelloDashworldLambdaFunction",
+                    "GetDashusersLambdaFunction",
                     "Arn"
                   ]
                 },
@@ -260,10 +330,10 @@
         "MethodResponses": []
       },
       "DependsOn": [
-        "HelloDashworldLambdaPermissionApiGateway"
+        "GetDashusersLambdaPermissionApiGateway"
       ]
     },
-    "ApiGatewayDeployment1718405164717": {
+    "ApiGatewayDeployment1718598495621": {
       "Type": "AWS::ApiGateway::Deployment",
       "Properties": {
         "RestApiId": {
@@ -272,15 +342,15 @@
         "StageName": "dev"
       },
       "DependsOn": [
-        "ApiGatewayMethodHelloGet"
+        "ApiGatewayMethodUsersIdVarGet"
       ]
     },
-    "HelloDashworldLambdaPermissionApiGateway": {
+    "GetDashusersLambdaPermissionApiGateway": {
       "Type": "AWS::Lambda::Permission",
       "Properties": {
         "FunctionName": {
           "Fn::GetAtt": [
-            "HelloDashworldLambdaFunction",
+            "GetDashusersLambdaFunction",
             "Arn"
           ]
         },
@@ -311,6 +381,155 @@
           ]
         }
       }
+    },
+    "ApiGatewayLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/api-gateway/crud-serverless-user-dev"
+      }
+    },
+    "CustomApiGatewayAccountCloudWatchRole": {
+      "Type": "Custom::ApiGatewayAccountRole",
+      "Version": 1,
+      "Properties": {
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "CustomDashresourceDashapigwDashcwDashroleLambdaFunction",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "IamRoleCustomResourcesLambdaExecution": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Join": [
+                "-",
+                [
+                  "dev",
+                  "crud-serverless-user",
+                  "custom-resources-lambda"
+                ]
+              ]
+            },
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      ":",
+                      [
+                        "arn",
+                        {
+                          "Ref": "AWS::Partition"
+                        },
+                        "iam:",
+                        {
+                          "Ref": "AWS::AccountId"
+                        },
+                        "role/*"
+                      ]
+                    ]
+                  },
+                  "Action": [
+                    "iam:AttachRolePolicy",
+                    "iam:CreateRole",
+                    "iam:ListAttachedRolePolicies",
+                    "iam:PassRole"
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      ":",
+                      [
+                        "arn",
+                        {
+                          "Ref": "AWS::Partition"
+                        },
+                        "apigateway:*::/account"
+                      ]
+                    ]
+                  },
+                  "Action": [
+                    "apigateway:GET",
+                    "apigateway:PATCH"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "CustomDashresourceDashapigwDashcwDashroleLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/crud-serverless-user/dev/1718598505817-2024-06-17T04:28:25.817Z/custom-resources.zip"
+        },
+        "FunctionName": "crud-serverless-user-dev-custom-resource-apigw-cw-role",
+        "Handler": "api-gateway-cloud-watch-role/handler.handler",
+        "MemorySize": 1024,
+        "Runtime": "nodejs18.x",
+        "Timeout": 180,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleCustomResourcesLambdaExecution",
+            "Arn"
+          ]
+        }
+      },
+      "DependsOn": [
+        "IamRoleCustomResourcesLambdaExecution"
+      ]
+    },
+    "usersTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "TableName": "usersTable",
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "pk",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "pk",
+            "KeyType": "HASH"
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 1,
+          "WriteCapacityUnits": 1
+        }
+      }
     }
   },
   "Outputs": {
@@ -319,16 +538,27 @@
         "Ref": "ServerlessDeploymentBucket"
       },
       "Export": {
-        "Name": "sls-hello-world-dev-ServerlessDeploymentBucketName"
+        "Name": "sls-crud-serverless-user-dev-ServerlessDeploymentBucketName"
       }
     },
-    "HelloDashworldLambdaFunctionQualifiedArn": {
-      "Description": "Current Lambda function version",
+    "EnterpriseLogAccessIamRole": {
       "Value": {
-        "Ref": "HelloDashworldLambdaVersionLUmzXjWYDZQPuzaOAg2hDVfA3rQVFzoIbuS0Klaeg"
+        "Fn::GetAtt": [
+          "EnterpriseLogAccessIamRole",
+          "Arn"
+        ]
       },
       "Export": {
-        "Name": "sls-hello-world-dev-HelloDashworldLambdaFunctionQualifiedArn"
+        "Name": "sls-crud-serverless-user-dev-EnterpriseLogAccessIamRole"
+      }
+    },
+    "GetDashusersLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "GetDashusersLambdaVersion4ZoP0VQDqrpv8Hdzqp3NU85bIqeIy5MZz0dO0758"
+      },
+      "Export": {
+        "Name": "sls-crud-serverless-user-dev-GetDashusersLambdaFunctionQualifiedArn"
       }
     },
     "ServiceEndpoint": {
@@ -354,7 +584,7 @@
         ]
       },
       "Export": {
-        "Name": "sls-hello-world-dev-ServiceEndpoint"
+        "Name": "sls-crud-serverless-user-dev-ServiceEndpoint"
       }
     }
   }
